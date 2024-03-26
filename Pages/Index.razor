@@ -1,0 +1,167 @@
+﻿@page "/"
+
+<h1>Student Card</h1>
+<h3>FIO</h3>
+<input @bind="fio"/>
+<h3>Curriculum</h3>
+<textarea @bind="curriculum"></textarea>
+<h3>Adress</h3>
+<textarea @bind="address"></textarea>
+<h3>Contacts</h3>
+<textarea @bind="contacts"></textarea>
+
+<br />
+<button @onclick="FillAll">Check student</button>
+<button @onclick="FillAll">Next student</button>
+<button @onclick="Update">Update</button>
+
+<br
+<h3>Sort students by:</h3>
+<h4>Faculty</h4>
+<input @bind="faculty" />
+<h4>Speciality</h4>
+<input @bind="speciality" />
+<h4>Course</h4>
+<input @bind="course" />
+<h4>Group</h4>
+<input @bind="group" />
+<button @onclick="Sort">Show by filter</button>
+
+<br
+<textarea @bind="studentsFio" readonly></textarea>
+
+@code
+{
+	static string fio, curriculum, address, contacts, studentsFio ;
+	static string faculty = " ";
+	static string speciality = " ";
+	static string course = " ";
+	static string group = " ";
+	static string path = "path_to_your_directory";
+	static List<string> files = Directory.GetFiles(path, "*", SearchOption.AllDirectories)
+											.ToList();
+
+	static int i = 0;
+	static public void FillAll()
+	{
+		fio = ReadFioFile(files[i]);
+		curriculum = ReadCurriculumFile(files[i]);
+		address = ReadAddressFile(files[i]);
+		contacts = ReadContactFile(files[i]);
+		if (i < files.Count - 1)
+		{
+			i++;
+		}
+		else
+			i = 0;
+	}
+	static public void Sort()
+	{
+		
+		studentsFio = string.Empty;
+		if (faculty == null && speciality == null && group == null && course == null)
+		{
+			
+			foreach (string file in files)
+			{
+				studentsFio += ReadFioFile(file) + "\n";
+			}
+		}
+		else
+		{
+			foreach(string file in files)
+			{
+				string fileInfo = ReadFile(file);
+				if (fileInfo.Contains(faculty) && fileInfo.Contains(speciality) && fileInfo.Contains(group) && fileInfo.Contains(course))
+				{
+					studentsFio += ReadFioFile(file) + "\n";
+				}
+			}
+		}
+
+	}
+	static public async void Update()
+	{
+		int j = i;
+		if(i == 0)
+		{
+			i = files.Count - 1;
+		}
+		else
+		{
+			i--;
+		}
+		string updFio = fio;
+		string updCurr = curriculum;
+		string updAddress = address;
+		string updContact = contacts;
+		using (StreamWriter sw = new StreamWriter(files[i], false))
+		{
+			await sw.WriteLineAsync("FIO: " + updFio);
+			await sw.WriteLineAsync("Curriculum: " + updCurr);
+			await sw.WriteLineAsync("Address: " + updAddress);
+			await sw.WriteLineAsync("Contacts: " + updContact);
+		}
+		i = j;
+	}
+
+	static public string ReadFioFile(string path)
+	{
+		using (StreamReader sr = new StreamReader(path))
+		{
+			var info = ReadFile(path);
+			int firstIndex = info.IndexOf("FIO");
+			int secondIndex = info.IndexOf("Curriculum");
+			string fio = info.Trim()
+				.Substring(firstIndex + 5, secondIndex - (firstIndex + 5))
+				.Replace('"', ' ')
+				.Trim();
+			return fio;
+		}
+	}
+	static public string ReadCurriculumFile(string path)
+	{
+		using (StreamReader sr = new StreamReader(path))
+		{
+			var info = ReadFile(path);
+			int firstIndex = info.IndexOf("Curriculum");
+			int secondIndex = info.IndexOf("Address");
+			string curriculum = info.Trim()
+				.Substring(firstIndex + 12, secondIndex - firstIndex - 12)
+				.Replace('"', ' ')
+				.Trim();
+			return curriculum;
+		}
+	}
+	static public string ReadAddressFile(string path)
+	{
+		using (StreamReader sr = new StreamReader(path))
+		{
+			var info = ReadFile(path);
+			int firstIndex = info.IndexOf("Address");
+			int secondIndex = info.IndexOf("Contacts");
+			string address = info.Trim()
+				.Substring(firstIndex + 9, secondIndex - firstIndex - 9)
+				.Replace('"', ' ')
+				.Trim();
+			return address;
+		}
+	}
+	static public string ReadContactFile(string path)
+	{
+		string info = ReadFile(path);
+		return info.Trim()
+						.Substring(info.IndexOf("Contacts") + 10)
+						.Replace('"', ' ')
+						.Trim();
+	}
+	static public string ReadFile(string path)
+	{
+		using(StreamReader sr = new StreamReader(path))
+		{
+			string info = sr.ReadToEnd().Replace("}", "").Replace("{", "").Replace(",", "");
+			return info;
+		}
+
+	}
+}
